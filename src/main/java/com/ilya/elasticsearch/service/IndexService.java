@@ -2,6 +2,7 @@ package com.ilya.elasticsearch.service;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
+import co.elastic.clients.elasticsearch.core.DeleteRequest;
 import co.elastic.clients.elasticsearch.indices.*;
 import com.ilya.elasticsearch.helper.Indices;
 import com.ilya.elasticsearch.helper.Util;
@@ -21,7 +22,7 @@ import java.util.List;
 @Service
 public class IndexService {
     private final List<String> INDICES_TO_CREATE = List.of(Indices.VEHICLE_INDEX);
-    private ElasticsearchClient elasticsearchClient;
+    private final ElasticsearchClient elasticsearchClient;
     private static final Logger LOG = LoggerFactory.getLogger(IndexService.class);
 
     @Autowired
@@ -31,12 +32,21 @@ public class IndexService {
 
     @PostConstruct
     public void tryToCreateIndices() throws IOException {
+        this.recreateIndices(false);
+    }
+
+    public void recreateIndices(boolean isDeleteIndices) {
         final String settings = Util.loadAsString("/static/es-settings.json");
 
         for (final String indexName: INDICES_TO_CREATE) {
+
             try (InputStream json = new ClassPathResource("/static/mapping/" + indexName + ".json").getInputStream()) {
                 boolean indexExists = elasticsearchClient.indices().exists(ExistsRequest.of(e -> e.index(indexName))).value();
-                if (indexExists) continue;
+                if (indexExists) {
+                    if (!isDeleteIndices) continue;
+
+                    elasticsearchClient.indices().delete(DeleteIndexRequest.of(e -> e.index(indexName)));
+                }
 
                 if (settings == null) {
                     LOG.error("Filed to create index with name {}", indexName);

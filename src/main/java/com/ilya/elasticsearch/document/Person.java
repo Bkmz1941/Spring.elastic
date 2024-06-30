@@ -10,8 +10,8 @@ import org.springframework.data.elasticsearch.annotations.Setting;
 
 @Getter
 @Setter
-@Document(indexName = "person")
-@Setting(settingPath = "/static/es-settings.json")
+//@Document(indexName = "person")
+//@Setting(settingPath = "/static/es-settings.json")
 public class Person {
     @Id
     @Field(type = FieldType.Keyword)
